@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A calm, focused space to write and shape your next great story."
+    />
+    <title>Draft — A home for your ideas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <a class="brand" href="#" aria-label="Draft home">
+          <span class="brand-mark" aria-hidden="true">d.</span>
+          <span>draft<span class="brand-period">.</span></span>
+        </a>
+
+        <div class="workspace-label">WORKSPACE</div>
+        <nav class="main-nav">
+          <a class="nav-link active" href="#editor" data-route-link="editor">
+            <span class="nav-icon" aria-hidden="true">✎</span>
+            <span>My writing</span>
+            <span class="nav-count">3</span>
+          </a>
+          <a class="nav-link" href="#published" data-route-link="published">
+            <span class="nav-icon nav-icon-grid" aria-hidden="true">▦</span>
+            <span>Published</span>
+            <span class="nav-count" id="published-count">0</span>
+          </a>
+          <a class="nav-link" href="#authors" data-route-link="authors">
+            <span class="nav-icon" aria-hidden="true">♙</span>
+            <span>Authors</span>
+          </a>
+          <a class="nav-link" href="#ideas">
+            <span class="nav-icon" aria-hidden="true">◇</span>
+            <span>Ideas</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+        <div class="workspace-label">YOUR SPACE</div>
+        <div class="space-card">
+          <div class="space-avatar" aria-hidden="true">S</div>
+          <div class="space-info">
+            <strong>Sam's journal</strong>
+            <span>Personal blog</span>
+          </div>
+          <span class="chevron" aria-hidden="true">⌄</span>
+        </div>
+
+        <div class="sidebar-bottom">
+          <div class="writing-tip">
+            <span class="tip-sparkle" aria-hidden="true">✦</span>
+            <p class="tip-label">A LITTLE REMINDER</p>
+            <p class="tip-copy">You don't have to write it perfectly. You just have to write it.</p>
+          </div>
+          <button class="profile-button" type="button">
+            <span class="profile-avatar" aria-hidden="true">S</span>
+            <span class="profile-name">Sam Taylor</span>
+            <span class="profile-menu" aria-hidden="true">···</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-content" id="editor">
+        <div id="editor-page">
+        <header class="topbar">
+          <div class="breadcrumb"><span>My writing</span><span class="breadcrumb-slash">/</span><strong id="breadcrumb-title">Untitled draft</strong></div>
+          <div class="topbar-actions">
+            <span class="save-indicator" id="save-status" role="status" aria-live="polite">
+              <span class="save-dot" aria-hidden="true"></span>
+              <span class="save-label">Saved</span>
+            </span>
+            <input class="visually-hidden" id="word-file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            <button class="button button-quiet" id="import-button" type="button">Import Word</button>
+            <button class="button button-quiet" id="preview-button" type="button">Preview</button>
+            <button class="button button-publish" id="publish-button" type="button">
+              Publish <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </header>
+
+        <section class="editor-layout" aria-label="Blog post editor">
+          <div class="editor-column">
+            <div class="editor-kicker"><span class="kicker-line"></span> NEW STORY</div>
+            <label class="visually-hidden" for="post-title">Post title</label>
+            <input
+              class="title-input"
+              id="post-title"
+              type="text"
+              placeholder="Give your story a title..."
+              maxlength="120"
+              autocomplete="off"
+            />
+            <div class="post-meta">
+              <span>By <span id="selected-author-name">Sam Taylor</span></span>
+              <span class="meta-separator">·</span>
+              <span id="reading-time">1 min read</span>
+              <span class="meta-separator">·</span>
+              <span id="word-count">0 words</span>
+            </div>
+            <div class="author-row">
+              <label for="post-author">Publish as</label>
+              <select class="author-picker" id="post-author" aria-label="Publish as author"></select>
+              <a class="text-button" href="#authors">Manage authors</a>
+            </div>
+
+            <div class="editor-rule"></div>
+            <div class="format-toolbar" aria-label="Formatting">
+              <button class="format-button" type="button" data-command="bold" aria-label="Bold" title="Bold">B</button>
+              <button class="format-button italic-button" type="button" data-command="italic" aria-label="Italic" title="Italic">I</button>
+              <span class="toolbar-divider"></span>
+              <button class="format-button heading-button" type="button" data-command="formatBlock" data-value="h2" aria-label="Heading" title="Heading">H</button>
+              <button class="format-button quote-button" type="button" data-command="formatBlock" data-value="blockquote" aria-label="Quote" title="Quote">❞</button>
+              <span class="toolbar-divider"></span>
+              <button class="format-button align-button" type="button" data-image-align="left" aria-label="Align image left" title="Align selected image left">⇤</button>
+              <button class="format-button align-button" type="button" data-image-align="center" aria-label="Center image" title="Center selected image">↔</button>
+              <button class="format-button align-button" type="button" data-image-align="right" aria-label="Align image right" title="Align selected image right">⇥</button>
+              <span class="toolbar-hint">Select an image to align it</span>
+            </div>
+            <label class="visually-hidden" for="post-body">Your story</label>
+            <div
+              class="body-input"
+              id="post-body"
+              contenteditable="true"
+              role="textbox"
+              aria-multiline="true"
+              data-placeholder="Write your story here, or import a Word document..."
+              spellcheck="true"
+            ></div>
+            <div class="editor-footer">
+              <span><span class="footer-key">⌘</span> + <span class="footer-key">S</span> to save</span>
+              <span id="character-count">0 characters</span>
+            </div>
+          </div>
+
+          <aside class="writing-sidebar" aria-label="Writing tips">
+            <div class="side-card focus-card">
+              <div class="card-icon focus-icon" aria-hidden="true">✳</div>
+              <p class="side-card-eyebrow">FIND YOUR FOCUS</p>
+              <h2>One thought at a time.</h2>
+              <p class="side-card-copy">Start with the one thing you want someone to feel after reading this.</p>
+              <button class="text-button" id="prompt-button" type="button">Give me a prompt <span aria-hidden="true">→</span></button>
+            </div>
+            <div class="side-card draft-card">
+              <div class="draft-card-heading">
+                <div>
+                  <p class="side-card-eyebrow">YOUR DRAFTS</p>
+                  <h2>Keep the ideas flowing</h2>
+                </div>
+                <span class="draft-count">03</span>
+              </div>
+              <div class="draft-item">
+                <span class="draft-indicator draft-indicator-peach"></span>
+                <span><strong>Notes from Sunday</strong><small>Edited 2 days ago</small></span>
+                <span class="draft-arrow" aria-hidden="true">↗</span>
+              </div>
+              <div class="draft-item">
+                <span class="draft-indicator draft-indicator-lilac"></span>
+                <span><strong>On starting over</strong><small>Edited last week</small></span>
+                <span class="draft-arrow" aria-hidden="true">↗</span>
+              </div>
+              <div class="draft-item">
+                <span class="draft-indicator draft-indicator-green"></span>
+                <span><strong>Little things, lately</strong><small>Edited Oct 12</small></span>
+                <span class="draft-arrow" aria-hidden="true">↗</span>
+              </div>
+            </div>
+            <div class="quiet-note">
+              <span aria-hidden="true">☁</span>
+              <p>Your words are yours.<br /><strong>We keep them safe.</strong></p>
+            </div>
+          </aside>
+        </section>
+        </div>
+
+        <section class="library-page" id="published-page" hidden>
+          <header class="library-header">
+            <div>
+              <p class="editor-kicker"><span class="kicker-line"></span> YOUR BLOG</p>
+              <h1>Published stories</h1>
+              <p class="library-intro">Stories you've shared with your readers.</p>
+            </div>
+            <a class="button button-publish" href="#editor">Write a story <span aria-hidden="true">+</span></a>
+          </header>
+          <div class="published-list" id="published-list"></div>
+        </section>
+
+        <section class="library-page authors-page" id="authors-page" hidden>
+          <header class="library-header">
+            <div>
+              <p class="editor-kicker"><span class="kicker-line"></span> YOUR TEAM</p>
+              <h1>Authors</h1>
+              <p class="library-intro">Create author profiles, then choose who wrote each story.</p>
+            </div>
+          </header>
+          <div class="authors-layout">
+            <form class="author-form" id="author-form">
+              <h2 id="author-form-heading">Add an author</h2>
+              <label for="author-name">Name</label>
+              <input id="author-name" name="name" type="text" maxlength="80" required placeholder="Author name" />
+              <label for="author-bio">About the author</label>
+              <textarea id="author-bio" name="bio" maxlength="300" rows="4" placeholder="A short introduction"></textarea>
+              <label for="author-photo">Profile photo (optional)</label>
+              <input id="author-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" />
+              <div class="author-form-actions">
+                <button class="button button-publish" id="save-author-button" type="submit">Add author</button>
+                <button class="button button-quiet" id="cancel-author-edit" type="button" hidden>Cancel</button>
+              </div>
+            </form>
+            <div class="authors-list" id="authors-list" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="reader-page" id="reader-page" hidden>
+          <div class="reader-topbar">
+            <a class="reader-brand" href="#published">draft<span>.</span></a>
+            <a class="text-button" href="#published">← All stories</a>
+          </div>
+          <article class="reader-article">
+            <p class="reader-byline" id="reader-byline">SAM TAYLOR</p>
+            <h1 id="reader-title"></h1>
+            <div class="reader-content preview-content" id="reader-content"></div>
+            <div class="reader-endmark" aria-hidden="true">✳</div>
+            <section class="author-card" aria-labelledby="reader-author-name">
+              <div class="author-avatar" id="reader-author-avatar" aria-hidden="true">S</div>
+              <div>
+                <p class="side-card-eyebrow">A LITTLE ABOUT THE WRITER</p>
+                <h2 id="reader-author-name">Sam Taylor</h2>
+                <p id="reader-author-bio"></p>
+              </div>
+            </section>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="preview-dialog" id="preview-dialog" aria-labelledby="preview-title">
+      <div class="preview-topbar">
+        <span class="preview-label">STORY PREVIEW</span>
+        <button class="close-button" id="close-preview" type="button" aria-label="Close preview">×</button>
+      </div>
+      <article class="preview-article">
+        <p class="preview-byline" id="preview-byline">SAM TAYLOR · 1 MIN READ</p>
+        <h1 id="preview-title">Untitled draft</h1>
+        <div class="preview-content" id="preview-content"></div>
+      </article>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
