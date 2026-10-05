@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A calm, focused space to write and shape your next great story."
+      content="Thoughtful stories, honest perspectives, and the little details that make us look a little closer."
     />
-    <title>Draft — A home for your ideas</title>
+    <title>Beyond the Surface</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,47 +16,42 @@
     />
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="supabase-config.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar" aria-label="Main navigation">
-        <a class="brand" href="#" aria-label="Draft home">
-          <span class="brand-mark" aria-hidden="true">d.</span>
-          <span>draft<span class="brand-period">.</span></span>
+        <a class="brand" href="#" aria-label="Beyond the Surface home">
+          <span class="brand-mark" aria-hidden="true">B.</span>
+          <span>Beyond the Surface</span>
         </a>
 
-        <div class="workspace-label">WORKSPACE</div>
+        <div class="workspace-label">EXPLORE</div>
         <nav class="main-nav">
-          <a class="nav-link active" href="#editor" data-route-link="editor">
-            <span class="nav-icon" aria-hidden="true">✎</span>
-            <span>My writing</span>
-            <span class="nav-count">3</span>
-          </a>
-          <a class="nav-link" href="#published" data-route-link="published">
+          <a class="nav-link active" href="#home" data-route-link="home">
             <span class="nav-icon nav-icon-grid" aria-hidden="true">▦</span>
-            <span>Published</span>
-            <span class="nav-count" id="published-count">0</span>
+            <span>Stories</span>
           </a>
-          <a class="nav-link" href="#authors" data-route-link="authors">
-            <span class="nav-icon" aria-hidden="true">♙</span>
-            <span>Authors</span>
+          <a class="nav-link" href="#editor" data-route-link="write">
+            <span class="nav-icon" aria-hidden="true">✎</span>
+            <span>Write a blog</span>
           </a>
-          <a class="nav-link" href="#ideas">
-            <span class="nav-icon" aria-hidden="true">◇</span>
-            <span>Ideas</span>
+          <a class="nav-link" href="#admin" data-route-link="admin" id="admin-nav-link" hidden>
+            <span class="nav-icon" aria-hidden="true">✓</span>
+            <span>Review submissions</span>
           </a>
         </nav>
 
         <div class="sidebar-divider"></div>
-        <div class="workspace-label">YOUR SPACE</div>
+        <div class="workspace-label">OUR JOURNAL</div>
         <div class="space-card">
-          <div class="space-avatar" aria-hidden="true">S</div>
+          <div class="space-avatar" aria-hidden="true">B.</div>
           <div class="space-info">
-            <strong>Sam's journal</strong>
-            <span>Personal blog</span>
+            <strong>Beyond the Surface</strong>
+            <span>Stories with depth</span>
           </div>
-          <span class="chevron" aria-hidden="true">⌄</span>
         </div>
 
         <div class="sidebar-bottom">
@@ -65,18 +60,36 @@
             <p class="tip-label">A LITTLE REMINDER</p>
             <p class="tip-copy">You don't have to write it perfectly. You just have to write it.</p>
           </div>
-          <button class="profile-button" type="button">
-            <span class="profile-avatar" aria-hidden="true">S</span>
-            <span class="profile-name">Sam Taylor</span>
-            <span class="profile-menu" aria-hidden="true">···</span>
-          </button>
+          <a class="profile-button" href="#editor">Have a story to share? <strong>Write for us →</strong></a>
         </div>
       </aside>
 
       <main class="main-content" id="editor">
-        <div id="editor-page">
+        <section class="home-page" id="home-page">
+          <header class="home-topbar">
+            <a class="home-brand" href="#home">Beyond the Surface</a>
+            <a class="button button-publish" href="#editor">Write a blog <span aria-hidden="true">+</span></a>
+          </header>
+          <section class="home-hero">
+            <p class="editor-kicker"><span class="kicker-line"></span> STORIES THAT STAY WITH YOU</p>
+            <h1>Beyond the Surface</h1>
+            <p class="home-intro">Thoughtful stories, honest perspectives, and the little details that make us look a little closer.</p>
+          </section>
+          <section class="home-stories" aria-labelledby="stories-heading">
+            <div class="home-stories-heading">
+              <div>
+                <p class="editor-kicker"><span class="kicker-line"></span> THE JOURNAL</p>
+                <h2 id="stories-heading">Stories to explore</h2>
+              </div>
+              <span id="published-count" class="story-count"></span>
+            </div>
+            <div class="published-list story-grid" id="published-list" aria-live="polite"></div>
+          </section>
+        </section>
+
+        <div id="editor-page" hidden>
         <header class="topbar">
-          <div class="breadcrumb"><span>My writing</span><span class="breadcrumb-slash">/</span><strong id="breadcrumb-title">Untitled draft</strong></div>
+          <div class="breadcrumb"><a href="#home">Stories</a><span class="breadcrumb-slash">/</span><strong id="breadcrumb-title">Write a blog</strong></div>
           <div class="topbar-actions">
             <span class="save-indicator" id="save-status" role="status" aria-live="polite">
               <span class="save-dot" aria-hidden="true"></span>
@@ -86,14 +99,16 @@
             <button class="button button-quiet" id="import-button" type="button">Import Word</button>
             <button class="button button-quiet" id="preview-button" type="button">Preview</button>
             <button class="button button-publish" id="publish-button" type="button">
-              Publish <span aria-hidden="true">↗</span>
+              Submit for review <span aria-hidden="true">↗</span>
             </button>
           </div>
         </header>
 
         <section class="editor-layout" aria-label="Blog post editor">
           <div class="editor-column">
-            <div class="editor-kicker"><span class="kicker-line"></span> NEW STORY</div>
+            <div class="editor-kicker"><span class="kicker-line"></span> COMMUNITY SUBMISSION</div>
+            <h1 class="write-heading">Share your story</h1>
+            <p class="write-intro">Anyone can contribute. Every submission is reviewed by our editors before it appears in the journal.</p>
             <label class="visually-hidden" for="post-title">Post title</label>
             <input
               class="title-input"
@@ -104,16 +119,26 @@
               autocomplete="off"
             />
             <div class="post-meta">
-              <span>By <span id="selected-author-name">Sam Taylor</span></span>
+              <span>By <span id="selected-author-name">Your name</span></span>
               <span class="meta-separator">·</span>
               <span id="reading-time">1 min read</span>
               <span class="meta-separator">·</span>
               <span id="word-count">0 words</span>
             </div>
             <div class="author-row">
-              <label for="post-author">Publish as</label>
-              <select class="author-picker" id="post-author" aria-label="Publish as author"></select>
-              <a class="text-button" href="#authors">Manage authors</a>
+              <label class="contributor-field">
+                <span>Your name</span>
+                <input id="submission-name" type="text" maxlength="80" autocomplete="name" placeholder="How should we credit you?" required />
+              </label>
+              <label class="contributor-field">
+                <span>Email (not shown publicly)</span>
+                <input id="submission-email" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com" required />
+              </label>
+              <label class="contributor-field contributor-photo">
+                <span>Profile photo (optional)</span>
+                <input id="submission-photo" type="file" accept="image/png,image/jpeg,image/webp" />
+              </label>
+              <select class="author-picker" id="post-author" aria-label="Publish as author" tabindex="-1" aria-hidden="true"></select>
             </div>
 
             <div class="editor-rule"></div>
@@ -150,32 +175,13 @@
               <div class="card-icon focus-icon" aria-hidden="true">✳</div>
               <p class="side-card-eyebrow">FIND YOUR FOCUS</p>
               <h2>One thought at a time.</h2>
-              <p class="side-card-copy">Start with the one thing you want someone to feel after reading this.</p>
+              <p class="side-card-copy">Tell us something honest, useful, surprising, or beautifully ordinary.</p>
               <button class="text-button" id="prompt-button" type="button">Give me a prompt <span aria-hidden="true">→</span></button>
             </div>
             <div class="side-card draft-card">
-              <div class="draft-card-heading">
-                <div>
-                  <p class="side-card-eyebrow">YOUR DRAFTS</p>
-                  <h2>Keep the ideas flowing</h2>
-                </div>
-                <span class="draft-count">03</span>
-              </div>
-              <div class="draft-item">
-                <span class="draft-indicator draft-indicator-peach"></span>
-                <span><strong>Notes from Sunday</strong><small>Edited 2 days ago</small></span>
-                <span class="draft-arrow" aria-hidden="true">↗</span>
-              </div>
-              <div class="draft-item">
-                <span class="draft-indicator draft-indicator-lilac"></span>
-                <span><strong>On starting over</strong><small>Edited last week</small></span>
-                <span class="draft-arrow" aria-hidden="true">↗</span>
-              </div>
-              <div class="draft-item">
-                <span class="draft-indicator draft-indicator-green"></span>
-                <span><strong>Little things, lately</strong><small>Edited Oct 12</small></span>
-                <span class="draft-arrow" aria-hidden="true">↗</span>
-              </div>
+              <p class="side-card-eyebrow">EDITORIAL REVIEW</p>
+              <h2>Every story gets a thoughtful read.</h2>
+              <p class="side-card-copy">Our editors review each contribution before it is published. We’ll contact you at the email you provide.</p>
             </div>
             <div class="quiet-note">
               <span aria-hidden="true">☁</span>
@@ -188,13 +194,29 @@
         <section class="library-page" id="published-page" hidden>
           <header class="library-header">
             <div>
-              <p class="editor-kicker"><span class="kicker-line"></span> YOUR BLOG</p>
-              <h1>Published stories</h1>
-              <p class="library-intro">Stories you've shared with your readers.</p>
+              <p class="editor-kicker"><span class="kicker-line"></span> ADMIN</p>
+              <h1>Review submissions</h1>
+              <p class="library-intro">Only approved stories are visible to readers.</p>
             </div>
-            <a class="button button-publish" href="#editor">Write a story <span aria-hidden="true">+</span></a>
+            <button class="button button-quiet" id="admin-signout" type="button" hidden>Sign out</button>
           </header>
-          <div class="published-list" id="published-list"></div>
+          <div id="admin-login">
+            <p class="library-intro">Sign in with the editor email address to review submissions.</p>
+            <form id="admin-login-form" class="author-form">
+              <label for="admin-email">Editor email</label>
+              <input id="admin-email" type="email" autocomplete="email" required />
+              <button class="button button-publish" type="submit">Email me a sign-in link</button>
+              <p id="admin-login-status" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+          <div class="published-list" id="pending-list" aria-live="polite" hidden></div>
+        </section>
+
+        <section class="submission-confirmation" id="submission-confirmation" hidden>
+          <p class="editor-kicker"><span class="kicker-line"></span> THANK YOU</p>
+          <h1>Your story is with our editors.</h1>
+          <p>We’ll review your submission before it appears in Beyond the Surface. You can keep exploring the journal while we take a look.</p>
+          <a class="button button-publish" href="#home">Back to the stories</a>
         </section>
 
         <section class="library-page authors-page" id="authors-page" hidden>
@@ -225,8 +247,8 @@
 
         <section class="reader-page" id="reader-page" hidden>
           <div class="reader-topbar">
-            <a class="reader-brand" href="#published">draft<span>.</span></a>
-            <a class="text-button" href="#published">← All stories</a>
+            <a class="reader-brand" href="#home">Beyond the Surface</a>
+            <a class="text-button" href="#home">← All stories</a>
           </div>
           <article class="reader-article">
             <p class="reader-byline" id="reader-byline">SAM TAYLOR</p>

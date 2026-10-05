@@ -13,12 +13,21 @@ const authorsPage = document.querySelector("#authors-page");
 const readerPage = document.querySelector("#reader-page");
 const authorSelect = document.querySelector("#post-author");
 const authorForm = document.querySelector("#author-form");
+const homePage = document.querySelector("#home-page");
+const submissionConfirmation = document.querySelector("#submission-confirmation");
+const pendingList = document.querySelector("#pending-list");
+const supabaseConfig = window.BEYOND_SURFACE_SUPABASE || {};
+const supabaseClient =
+  window.supabase && supabaseConfig.url && supabaseConfig.anonKey
+    ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey)
+    : null;
+const ADMIN_USER_ID = (supabaseConfig.adminUserId || "").trim();
 
 const DATABASE_NAME = "draft-blog-writing";
 const DEFAULT_AUTHOR = {
-  id: "sam-taylor",
-  name: "Sam Taylor",
-  bio: "A personal journal about everyday moments, new beginnings, and the little things worth remembering.",
+  id: "beyond-the-surface",
+  name: "Beyond the Surface",
+  bio: "Stories, perspectives, and reflections from our community of writers.",
   photo: "",
 };
 const prompts = [
@@ -47,7 +56,9 @@ function updateStats() {
   const words = getWordCount(text);
   const minutes = Math.max(1, Math.ceil(words / 200));
   document.querySelector("#breadcrumb-title").textContent =
-    titleInput.value.trim() || "Untitled draft";
+    titleInput.value.trim() || "Write a blog";
+  document.querySelector("#selected-author-name").textContent =
+    document.querySelector("#submission-name").value.trim() || "Your name";
   wordCount.textContent = `${words} ${words === 1 ? "word" : "words"}`;
   characterCount.textContent = `${text.length} ${
     text.length === 1 ? "character" : "characters"
@@ -513,127 +524,177 @@ async function publishStory() {
     return;
   }
 
-  const post = {
-    id: publishedDraftId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    title,
-    body,
-    authorId: author.id,
-    authorName: author.name,
-    authorBio: author.bio || "",
-    authorPhoto: author.photo || "",
-    publishedAt: new Date().toISOString(),
-    wordCount: getWordCount(bodyInput.innerText),
-  };
+  const nameInput = document.querySelector("#submission-name");
+  const emailInput = document.querySelector("#submission-email");
+  const photoInput = document.querySelector("#submission-photo");
+  const name = nameInput.value.trim();
+  const email = emailInput.value.trim().toLowerCase();
+  if (!name || !emailInput.validity.valid) {
+    showToast("Enter your name and a valid email address to submit.");
+    (name ? emailInput : nameInput).focus();
+    return;
+  }
+  if (!supabaseClient) {
+    showToast("Story submissions are not configured yet. Please try again later.");
+    console.error("Supabase is not configured. Set the project URL and public anon key in supabase-config.js.");
+    return;
+  }
+  const photoFile = photoInput.files[0];
+  if (photoFile && !["image/png", "image/jpeg", "image/webp"].includes(photoFile.type)) {
+    showToast("Choose a PNG, JPG, or WebP profile photo.");
+    return;
+  }
+  if (photoFile && photoFile.size > 1024 * 1024) {
+    showToast("Choose a profile photo smaller than 1 MB.");
+    return;
+  }
 
   try {
     window.clearTimeout(saveTimer);
-    await writePublishedPost(post);
-    publishedDraftId = post.id;
-    setSaveState("saved");
-    showToast("Your story is published.");
-    window.location.hash = "published";
+    let photoUrl = "";
+    if (photoFile) {
+      const extension = photoFile.type === "image/png" ? "png" : photoFile.type === "image/webp" ? "webp" : "jpg";
+      const photoPath = `${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await supabaseClient.storage
+        .from("story-photos")
+        .upload(photoPath, photoFile, { contentType: photoFile.type, upsert: false });
+      if (uploadError) throw uploadError;
+      const { data } = supabaseClient.storage.from("story-photos").getPublicUrl(photoPath);
+      photoUrl = data.publicUrl;
+    }
+    const { error } = await supabaseClient.rpc("submit_story", {
+      story_title: title,
+      story_body: body,
+      contributor_name: name,
+      contributor_email: email,
+      contributor_photo_url: photoUrl,
+    });
+    if (error) throw error;
+    titleInput.value = "";
+    bodyInput.replaceChildren();
+    nameInput.value = "";
+    emailInput.value = "";
+    photoInput.value = "";
+    publishedDraftId = null;
+    updateStats();
+    window.location.hash = "submitted";
   } catch (error) {
-    showToast("Your story could not be published.");
-    console.error("Unable to publish story.", error);
+    showToast("Your story could not be submitted. Please try again.");
+    console.error("Unable to submit story for review.", error);
   }
 }
 
 function createPostCard(post) {
   const card = document.createElement("article");
-  card.className = "published-card";
+  card.className = "published-card story-tile";
+  const link = document.createElement("a");
+  link.className = "story-tile-link";
+  link.href = `#read/${encodeURIComponent(post.id)}`;
+  link.setAttribute("aria-label", `Read ${post.title}`);
 
-  const date = document.createElement("p");
-  date.className = "published-date";
-  date.textContent = new Date(post.publishedAt).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
+  const byline = document.createElement("div");
+  byline.className = "story-tile-byline";
+  const avatar = document.createElement("span");
+  avatar.className = "story-avatar";
+  if (post.contributor_photo_url) {
+    const photo = document.createElement("img");
+    photo.src = post.contributor_photo_url;
+    photo.alt = "";
+    photo.loading = "lazy";
+    avatar.append(photo);
+  } else {
+    avatar.textContent = (post.authorName || "W").trim().charAt(0).toUpperCase();
+  }
+  const author = document.createElement("span");
+  author.textContent = post.authorName || "Guest writer";
+  byline.append(avatar, author);
   const title = document.createElement("h2");
   title.textContent = post.title;
-
-  const byline = document.createElement("p");
-  byline.className = "published-author";
-  byline.textContent = `By ${post.authorName || DEFAULT_AUTHOR.name}`;
-
-  const excerpt = document.createElement("p");
-  excerpt.className = "published-excerpt";
-  excerpt.textContent = post.body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 220);
-
-  const footer = document.createElement("div");
-  footer.className = "published-card-footer";
+  const date = document.createElement("span");
+  date.textContent = new Date(post.created_at || post.publishedAt).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
   const readTime = document.createElement("span");
-  readTime.textContent = `${Math.max(1, Math.ceil(post.wordCount / 200))} min read`;
-  const link = document.createElement("a");
-  link.className = "text-button";
-  link.href = `#read/${encodeURIComponent(post.id)}`;
-  link.textContent = "Read story →";
-  footer.append(readTime, link);
-  card.append(date, title, byline, excerpt, footer);
+  const content = new DOMParser().parseFromString(post.body, "text/html").body.textContent;
+  const words = post.word_count || post.wordCount || getWordCount(content);
+  readTime.textContent = `${Math.max(1, Math.ceil(words / 200))} min read`;
+  const metadata = document.createElement("div");
+  metadata.className = "story-tile-meta";
+  metadata.append(date, readTime);
+  link.append(byline, title, metadata);
+  card.append(link);
   return card;
 }
 
 async function showPublishedPosts() {
   const list = document.querySelector("#published-list");
   list.replaceChildren();
-  let database;
+  if (!supabaseClient) {
+    showStoriesEmpty("The journal is being set up. Please check back soon.");
+    document.querySelector("#published-count").textContent = "";
+    return;
+  }
   try {
-    database = await openDatabase();
-    const request = database.transaction("published", "readonly").objectStore("published").getAll();
-    const posts = await new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    database.close();
-    database = null;
-    posts.sort((first, second) => new Date(second.publishedAt) - new Date(first.publishedAt));
+    const { data: posts, error } = await supabaseClient
+      .from("stories")
+      .select("id,title,body,author_name,contributor_photo_url,created_at,word_count")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
     document.querySelector("#published-count").textContent = posts.length;
-
     if (!posts.length) {
-      const empty = document.createElement("div");
-      empty.className = "published-empty";
-      const heading = document.createElement("h2");
-      heading.textContent = "Your first story is waiting.";
-      const description = document.createElement("p");
-      description.textContent = "Publish a draft and it will appear here for readers.";
-      const link = document.createElement("a");
-      link.className = "button button-publish";
-      link.href = "#editor";
-      link.textContent = "Go to your writing";
-      empty.append(heading, description, link);
-      list.append(empty);
+      showStoriesEmpty("There are no published stories yet. Be the first to share one.");
       return;
     }
-    posts.forEach((post) => list.append(createPostCard(post)));
+    posts.forEach((post) => list.append(createPostCard({ ...post, authorName: post.author_name })));
   } catch (error) {
-    showToast("Your published stories could not be loaded.");
-    console.error("Unable to load published stories.", error);
-  } finally {
-    if (database) database.close();
+    showStoriesEmpty("Stories couldn’t be loaded. Please refresh the page to try again.");
+    console.error("Unable to load approved stories.", error);
   }
 }
 
+function showStoriesEmpty(message) {
+  const empty = document.createElement("div");
+  empty.className = "published-empty";
+  const heading = document.createElement("h2");
+  heading.textContent = "A good story starts somewhere.";
+  const description = document.createElement("p");
+  description.textContent = message;
+  const link = document.createElement("a");
+  link.className = "button button-publish";
+  link.href = "#editor";
+  link.textContent = "Write a blog";
+  empty.append(heading, description, link);
+  document.querySelector("#published-list").replaceChildren(empty);
+}
+
 async function updatePublishedCount() {
-  let database;
-  try {
-    database = await openDatabase();
-    const request = database.transaction("published", "readonly").objectStore("published").count();
-    const count = await new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    document.querySelector("#published-count").textContent = count;
-  } catch (error) {
-    console.error("Unable to count published stories.", error);
-  } finally {
-    if (database) database.close();
-  }
+  if (window.location.hash.slice(1) !== "home" && window.location.hash.slice(1) !== "") return;
+  await showPublishedPosts();
 }
 
 async function showReader(postId) {
   try {
-    const post = await readStore("published", postId);
+    let post;
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient
+        .from("stories")
+        .select("id,title,body,author_name,contributor_photo_url,created_at,status")
+        .eq("id", postId)
+        .eq("status", "approved")
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        post = {
+          ...data,
+          authorName: data.author_name,
+          authorPhoto: data.contributor_photo_url,
+          publishedAt: data.created_at,
+        };
+      }
+    }
     if (!post) {
       showToast("That published story could not be found.");
       window.location.hash = "published";
@@ -660,6 +721,12 @@ async function showReader(postId) {
     document.querySelector("#reader-author-name").textContent = author.name;
     document.querySelector("#reader-author-bio").textContent = author.bio;
     updateAuthorAvatar(document.querySelector("#reader-author-avatar"), author);
+    if (post.authorPhoto) {
+      const photo = document.createElement("img");
+      photo.src = post.authorPhoto;
+      photo.alt = "";
+      document.querySelector("#reader-author-avatar").replaceChildren(photo);
+    }
   } catch (error) {
     showToast("That published story could not be opened.");
     console.error("Unable to open published story.", error);
@@ -667,30 +734,170 @@ async function showReader(postId) {
   }
 }
 
+function renderAdminSubmissions(rows) {
+  pendingList.replaceChildren();
+  pendingList.hidden = false;
+  document.querySelector("#admin-login").hidden = true;
+  document.querySelector("#admin-signout").hidden = false;
+  if (!rows.length) {
+    const empty = document.createElement("p");
+    empty.className = "library-intro";
+    empty.textContent = "There are no submissions waiting for review.";
+    pendingList.append(empty);
+    return;
+  }
+  rows.forEach((row) => {
+    const card = document.createElement("article");
+    card.className = "published-card moderation-card";
+    const title = document.createElement("h2");
+    title.textContent = row.title;
+    const byline = document.createElement("p");
+    byline.className = "published-author";
+    byline.textContent = `By ${row.author_name} · ${row.contact_email} · ${new Date(row.created_at).toLocaleDateString()}`;
+    const body = document.createElement("div");
+    body.className = "moderation-content";
+    body.innerHTML = cleanImportedHtml(row.body);
+    const actions = document.createElement("div");
+    actions.className = "moderation-actions";
+    ["approved", "rejected"].forEach((status) => {
+      const button = document.createElement("button");
+      button.className = status === "approved" ? "button button-publish" : "button button-quiet";
+      button.type = "button";
+      button.textContent = status === "approved" ? "Approve and publish" : "Reject";
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          const { error } = await supabaseClient.rpc("review_story", {
+            story_id: row.id,
+            new_status: status,
+          });
+          if (error) throw error;
+          await loadAdminSubmissions();
+          showToast(status === "approved" ? "Story approved and published." : "Submission rejected.");
+        } catch (error) {
+          button.disabled = false;
+          showToast("The submission could not be updated.");
+          console.error("Unable to review story.", error);
+        }
+      });
+      actions.append(button);
+    });
+    card.append(title, byline, body, actions);
+    pendingList.append(card);
+  });
+}
+
+async function loadAdminSubmissions() {
+  if (!supabaseClient) {
+    document.querySelector("#admin-login-status").textContent =
+      "The review system is not configured yet. Please contact the site administrator.";
+    return;
+  }
+  const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError) {
+    console.error("Unable to check editor sign-in.", sessionError);
+    document.querySelector("#admin-login-status").textContent = "Editor sign-in could not be checked.";
+    return;
+  }
+  window.adminAuthenticated = Boolean(ADMIN_USER_ID && session && session.user.id === ADMIN_USER_ID);
+  document.querySelector("#admin-signout").hidden = !window.adminAuthenticated;
+  document.querySelector("#admin-nav-link").hidden = !window.adminAuthenticated;
+  if (!window.adminAuthenticated) {
+    document.querySelector("#admin-login").hidden = false;
+    pendingList.hidden = true;
+    if (session && ADMIN_USER_ID) {
+      document.querySelector("#admin-login-status").textContent =
+        "This Supabase account is not authorized to review submissions.";
+    }
+    return;
+  }
+  document.querySelector("#admin-login").hidden = true;
+  pendingList.hidden = false;
+  const { data, error } = await supabaseClient.rpc("list_pending_stories");
+  if (error) {
+    showToast("Pending submissions could not be loaded.");
+    console.error("Unable to load pending stories.", error);
+    return;
+  }
+  renderAdminSubmissions(data || []);
+}
+
+document.querySelector("#admin-login-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = document.querySelector("#admin-email").value.trim().toLowerCase();
+  const status = document.querySelector("#admin-login-status");
+  if (!supabaseClient) {
+    status.textContent = "The review system is not configured yet.";
+    return;
+  }
+  if (!ADMIN_USER_ID) {
+    status.textContent = "The editor account is not configured yet.";
+    return;
+  }
+  status.textContent = "Sending a secure sign-in link…";
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin },
+  });
+  if (error) {
+    status.textContent = "A sign-in link could not be sent. Please try again.";
+    console.error("Unable to send editor sign-in link.", error);
+    return;
+  }
+  status.textContent = "Check your email for a secure sign-in link.";
+});
+
+document.querySelector("#admin-signout").addEventListener("click", async () => {
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    showToast("You could not be signed out.");
+    console.error("Unable to sign out editor.", error);
+    return;
+  }
+  window.adminAuthenticated = false;
+  await loadAdminSubmissions();
+});
+
+if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange(() => {
+    if (window.location.hash.slice(1) === "admin") {
+      window.setTimeout(loadAdminSubmissions, 0);
+    }
+  });
+}
+
 function updatePage() {
-  const hash = window.location.hash.slice(1);
+  const hash = window.location.hash.slice(1) || "home";
+  const isHome = hash === "home" || hash === "published";
   const isReader = hash.startsWith("read/");
-  const isPublished = hash === "published";
+  const isEditor = hash === "editor";
   const isAuthors = hash === "authors";
-  editorPage.hidden = isReader || isPublished || isAuthors;
-  publishedPage.hidden = !isPublished;
+  const isAdmin = hash === "admin";
+  const isSubmitted = hash === "submitted";
+  homePage.hidden = !isHome;
+  editorPage.hidden = !isEditor;
+  publishedPage.hidden = !isAdmin;
   authorsPage.hidden = !isAuthors;
   readerPage.hidden = !isReader;
+  submissionConfirmation.hidden = !isSubmitted;
   document.querySelector(".app-shell").classList.toggle("reader-mode", isReader);
+  document.querySelector(".app-shell").classList.toggle("public-mode", isHome || isReader);
   document.querySelectorAll("[data-route-link]").forEach((link) => {
     link.classList.toggle(
       "active",
-      link.dataset.routeLink === (isPublished ? "published" : isAuthors ? "authors" : "editor"),
+      link.dataset.routeLink === (isAdmin ? "admin" : isEditor ? "write" : "home"),
     );
   });
 
-  if (isPublished) showPublishedPosts();
-  else updatePublishedCount();
+  if (isHome) showPublishedPosts();
+  document.querySelector("#admin-nav-link").hidden = !isAdmin && !window.adminAuthenticated;
+  if (isAdmin) loadAdminSubmissions();
   if (isAuthors) refreshAuthors().catch((error) => {
     showToast("Author profiles could not be loaded.");
     console.error("Unable to load author profiles.", error);
   });
   if (isReader) showReader(decodeURIComponent(hash.slice("read/".length)));
+  if (isHome || isEditor || isAdmin || isSubmitted) window.scrollTo(0, 0);
 }
 
 async function importWordDocument(file) {
@@ -735,6 +942,11 @@ async function importWordDocument(file) {
 titleInput.addEventListener("input", () => {
   updateStats();
   saveDraft();
+});
+
+document.querySelector("#submission-name").addEventListener("input", (event) => {
+  document.querySelector("#selected-author-name").textContent =
+    event.currentTarget.value.trim() || "Your name";
 });
 
 bodyInput.addEventListener("input", () => {
