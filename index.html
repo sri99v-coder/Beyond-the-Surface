@@ -268,6 +268,30 @@
       </main>
     </div>
 
+    <details class="appearance-control">
+      <summary aria-label="Change website appearance" title="Change appearance">
+        <span aria-hidden="true">◐</span>
+        <span>Appearance</span>
+      </summary>
+      <div class="appearance-panel">
+        <strong>Make it yours</strong>
+        <label for="appearance-color">Accent color</label>
+        <select id="appearance-color" data-appearance-color>
+          <option value="coral">Terracotta</option>
+          <option value="teal">Ocean teal</option>
+          <option value="violet">Soft violet</option>
+          <option value="green">Forest green</option>
+        </select>
+        <label for="appearance-background">Background</label>
+        <select id="appearance-background" data-appearance-background>
+          <option value="cream">Warm cream</option>
+          <option value="white">Clean white</option>
+          <option value="sage">Soft sage</option>
+          <option value="blue">Cool blue</option>
+        </select>
+      </div>
+    </details>
+
     <dialog class="preview-dialog" id="preview-dialog" aria-labelledby="preview-title">
       <div class="preview-topbar">
         <span class="preview-label">STORY PREVIEW</span>

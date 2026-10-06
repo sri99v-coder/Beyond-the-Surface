@@ -66,6 +66,48 @@ function updateStats() {
   readingTime.textContent = `${minutes} min read`;
 }
 
+function initializeAppearance() {
+  const colorControl = document.querySelector("[data-appearance-color]");
+  const backgroundControl = document.querySelector("[data-appearance-background]");
+  const colors = ["coral", "teal", "violet", "green"];
+  const backgrounds = ["cream", "white", "sage", "blue"];
+  let saved = {};
+
+  try {
+    saved = JSON.parse(localStorage.getItem("beyond-surface-appearance") || "{}");
+  } catch (error) {
+    console.error("Saved appearance preferences could not be read.", error);
+  }
+
+  const selectedColor = colors.includes(saved.color) ? saved.color : "coral";
+  const selectedBackground = backgrounds.includes(saved.background)
+    ? saved.background
+    : "cream";
+  document.body.dataset.accent = selectedColor;
+  document.body.dataset.background = selectedBackground;
+  colorControl.value = selectedColor;
+  backgroundControl.value = selectedBackground;
+
+  const saveAppearance = () => {
+    document.body.dataset.accent = colorControl.value;
+    document.body.dataset.background = backgroundControl.value;
+    try {
+      localStorage.setItem(
+        "beyond-surface-appearance",
+        JSON.stringify({
+          color: colorControl.value,
+          background: backgroundControl.value,
+        }),
+      );
+    } catch (error) {
+      console.error("Appearance preferences could not be saved.", error);
+    }
+  };
+
+  colorControl.addEventListener("change", saveAppearance);
+  backgroundControl.addEventListener("change", saveAppearance);
+}
+
 function setSaveState(state) {
   saveStatus.classList.toggle("saving", state === "saving");
   saveStatus.classList.toggle("save-error", state === "error");
@@ -1062,6 +1104,8 @@ document.addEventListener("keydown", (event) => {
 });
 
 window.addEventListener("hashchange", updatePage);
+
+initializeAppearance();
 
 async function startApp() {
   await loadAuthors();
