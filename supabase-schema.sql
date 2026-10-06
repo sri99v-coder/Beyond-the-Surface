@@ -32,7 +32,7 @@ create policy "Anyone can read approved stories"
 drop policy if exists "Editor can read all stories" on public.stories;
 create policy "Editor can read all stories"
   on public.stories for select to authenticated
-  using (auth.uid() = '876cfe53-ec30-4d3a-b260-21c01232348d'::uuid);
+  using (auth.uid() = 'b7bb376f-5688-4952-8e8d-08a1d6a466c6'::uuid);
 
 create or replace function public.submit_story(
   story_title text,
@@ -91,7 +91,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if auth.uid() is distinct from '876cfe53-ec30-4d3a-b260-21c01232348d'::uuid then
+  if auth.uid() is distinct from 'b7bb376f-5688-4952-8e8d-08a1d6a466c6'::uuid then
     raise exception 'Not authorized';
   end if;
 
@@ -114,7 +114,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if auth.uid() is distinct from '876cfe53-ec30-4d3a-b260-21c01232348d'::uuid
+  if auth.uid() is distinct from 'b7bb376f-5688-4952-8e8d-08a1d6a466c6'::uuid
      or new_status not in ('approved', 'rejected') then
     raise exception 'Not authorized';
   end if;
