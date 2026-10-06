@@ -1817,7 +1817,7 @@ body[data-background] .appearance-panel {
   position: fixed;
   z-index: 20;
   right: 20px;
-  bottom: 20px;
+  bottom: 64px;
   color: var(--ink);
   font-size: 12px;
 }
@@ -1893,6 +1893,6 @@ body[data-background] .appearance-panel {
 @media (max-width: 520px) {
   .appearance-control {
     right: 12px;
-    bottom: 12px;
+    bottom: 58px;
   }
 }
